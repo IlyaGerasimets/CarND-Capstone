@@ -232,19 +232,20 @@ class TLDetector(object):
             rospy.logdebug("light y is out of view: %s", pos_y)
             return TrafficLight.UNKNOWN
 
-        enable_dump = False
-        if enable_dump:
-            self.dump_roi(pos_x, pos_y)
-            return TrafficLight.UNKNOWN
+        cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
+        roi = self.extract_roi(cv_image, pos_x, pos_y)
 
-        roi = self.extract_roi(pos_x, pos_y)
-
-        enable_monitoring = True
+        enable_monitoring = False
         if enable_monitoring:
             self.image_pub.publish(self.bridge.cv2_to_imgmsg(roi, "bgr8"))
 
         # Get classification
         state = self.light_classifier.get_classification(roi)
+
+        enable_roi_dump = False
+        if enable_roi_dump:
+            self.dump_roi(cv_image, state)
+            return TrafficLight.UNKNOWN
 
         dump_unknown_images = False
         if state == TrafficLight.UNKNOWN and dump_unknown_images:
@@ -259,7 +260,7 @@ class TLDetector(object):
         return state
 
 
-    def extract_roi(self, pos_x, pos_y):
+    def extract_roi(self, cv_image, pos_x, pos_y):
         pos_x_min, pos_x_max = fit_box(self.image_width, pos_x, int(self.image_width/2))
         pos_y_min, pos_y_max = fit_box(self.image_height, pos_y, int(self.image_height/2))
 
@@ -270,14 +271,12 @@ class TLDetector(object):
         right = pos_x_max
 
         # select part of the image
-        cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
         return cv_image[top:bottom,left:right]
 
-    def dump_roi(self, pos_x, pos_y):
-        roi = self.extract_roi(pos_x, pos_y)
-        filename = 'img_%s.png' % (self.dump_count)
+    def dump_roi(self, cv_image, state):
+        filename = 'images/img_%s_%s.png' % (self.dump_count, state)
         self.dump_count += 1
-        cv2.imwrite(filename, roi)
+        cv2.imwrite(filename, cv_image)
 
     def load_stop_line_waypoints(self, waypoints):
 
