@@ -5,6 +5,7 @@ import numpy as np
 import os
 import sys
 import csv
+import shutil
 
 from os import path
 current_dir = path.dirname(path.abspath(__file__))
@@ -29,6 +30,40 @@ class Prep(object):
                 image = cv2.imread(image_path)
                 result = self.get_classification(image)
                 writer.writerow([file, result])
+
+    def ensure_dir(self, dir):
+        if not path.exists(dir):
+            os.makedirs(dir)
+
+
+    def PlaceByClasses(self):
+        image_dir = path.join(current_dir, 'images')
+        self.ensure_dir(image_dir)
+        self.ensure_dir(path.join(image_dir, 'red'))
+        self.ensure_dir(path.join(image_dir, 'yellow'))
+        self.ensure_dir(path.join(image_dir, 'green'))
+        self.ensure_dir(path.join(image_dir, 'unknown'))
+
+        # 'red':0, 'yellow':1, 'green':2
+
+        with open(path.join(current_dir, 'dict.csv')) as csv_file:
+            reader = csv.DictReader(csv_file, ['name', 'class'])
+            for row in reader:
+                name = row['name']
+                c = row['class']
+                if c == '0':
+                    target = 'red'
+                elif c == '1':
+                    target = 'yellow'
+                elif c == '2':
+                    target = 'green'
+                else:
+                    target = 'unknown'
+
+                source_path = path.join(image_dir, name)
+                target_path = path.join(image_dir, target, name)
+                shutil.move(source_path, target_path)
+                
 
     def get_classification(self, image):
         h, w, c = image.shape
@@ -80,4 +115,4 @@ class Prep(object):
         return UNKNOWN
 
 p = Prep()
-p.Load()
+p.PlaceByClasses()
