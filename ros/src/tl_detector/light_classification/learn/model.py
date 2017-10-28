@@ -2,7 +2,7 @@ from keras.layers import Activation, Dropout, Convolution2D, MaxPooling2D, Flatt
 from keras.models import Sequential
 
 nb_classes = 3
-image_shape = [800, 600, 3]
+image_shape = [80, 60, 3]
 
 def get_model():
   model = Sequential()
