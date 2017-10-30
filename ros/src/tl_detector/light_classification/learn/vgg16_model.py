@@ -2,7 +2,12 @@ from keras.applications.vgg16 import VGG16
 from keras.preprocessing import image
 from keras.applications.vgg16 import preprocess_input
 from keras.layers import Flatten, Dense
-from keras.models import Model
+from keras.models import Model, load_model
+from keras.preprocessing.image import img_to_array
+
+import tensorflow as tf
+import os
+import cv2
 
 import numpy as np
 
@@ -30,30 +35,42 @@ def get_model():
     return model
 
 def train_model(model):
+    # Check for a GPU
+    if not tf.test.gpu_device_name():
+        warnings.warn('No GPU found. Please use a GPU to train your neural network.')
+    else:
+        print('Default GPU Device: {}'.format(tf.test.gpu_device_name()))
+
     datagen = image.ImageDataGenerator(width_shift_range=.2, height_shift_range=.2, shear_range=0.05, zoom_range=.1, 
         fill_mode='nearest', rescale=1. / 255)
 
     image_data_gen = datagen.flow_from_directory('images', target_size=(source_shape[0], source_shape[1]), 
         classes=['green', 'yellow', 'red'], batch_size=batch_size)
 
-    model.fit_generator(image_data_gen, steps_per_epoch=50)
+    model.fit_generator(image_data_gen, steps_per_epoch=50, epochs=nb_epoch)
 
 
 def save_model_state(model):
     filename = 'nets/light_classifier_model_vgg16_%sx%s.h5'% (source_shape[0], source_shape[1])
     model.save(filename)
 
+def load_result_model():
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    model = load_model(dir_path + '/nets/light_classifier_model.h5')
+    #graph = tf.get_default_graph()
+    model._make_predict_function()
+    return model
 
-model = get_model()
-model.summary()
-train_model(model)
-save_model_state(model)
+def test_image_convert():
+    model = load_result_model()
 
-# img_path = 'images/img_0_0.png'
-# img = image.load_img(img_path, target_size=(224, 224))
-# x = image.img_to_array(img)
-# x = np.expand_dims(x, axis=0)
-# x = preprocess_input(x)
+    img_path = 'images/red/img_0_0.png'
+    cv_image = cv2.imread(img_path)
+    # cv_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
+    cv_image = cv2.resize(cv_image, (160, 120)).astype(np.float32)
+    image_data = np.reshape(cv_image, (1,160,120,3))
+    x = preprocess_input(image_data)
+    features = model.predict(x)
+    print(features) # GYR
 
-# features = model.predict(x)
-# print(features)
+test_image_convert()

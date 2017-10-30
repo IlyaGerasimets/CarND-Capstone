@@ -233,7 +233,12 @@ class TLDetector(object):
             return TrafficLight.UNKNOWN
 
         cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
-        roi = self.extract_roi(cv_image, pos_x, pos_y)
+
+        enable_focus = False # cut image
+        if enable_focus:
+            roi = self.extract_roi(cv_image, pos_x, pos_y)
+        else:
+            roi = cv_image    
 
         enable_monitoring = False
         if enable_monitoring:
