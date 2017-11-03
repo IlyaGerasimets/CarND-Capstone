@@ -3,6 +3,7 @@ from keras.preprocessing import image
 from keras.applications.vgg16 import preprocess_input
 from keras.layers import Flatten, Dense
 from keras.models import Model
+import tensorflow as tf
 
 import numpy as np
 
@@ -10,7 +11,7 @@ nb_classes = 3
 input_shape = (800, 600, 3)
 source_shape = (160, 120, 3) # original VGG expects input 224x224x3
 batch_size = 64
-nb_epoch = 10
+nb_epoch = 25
 
 def get_model():
     # load model without last layer
@@ -36,13 +37,19 @@ def train_model(model):
     image_data_gen = datagen.flow_from_directory('images', target_size=(source_shape[0], source_shape[1]), 
         classes=['green', 'yellow', 'red'], batch_size=batch_size)
 
-    model.fit_generator(image_data_gen, steps_per_epoch=50)
+    model.fit_generator(image_data_gen, steps_per_epoch=50, epochs=nb_epoch)
 
 
 def save_model_state(model):
     filename = 'nets/light_classifier_model_vgg16_%sx%s.h5'% (source_shape[0], source_shape[1])
     model.save(filename)
 
+
+
+if not tf.test.gpu_device_name():
+    warnings.warn('No GPU found. Please use a GPU to train your neural network.')
+else:
+    print('Default GPU Device: {}'.format(tf.test.gpu_device_name()))
 
 model = get_model()
 model.summary()
