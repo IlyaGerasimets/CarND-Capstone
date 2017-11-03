@@ -56,21 +56,28 @@ def save_model_state(model):
 
 def load_result_model():
     dir_path = os.path.dirname(os.path.realpath(__file__))
-    model = load_model(dir_path + '/nets/light_classifier_model.h5')
+    model = load_model(dir_path + '/nets/light_classifier_model_vgg16_160x120_25.h5')
     #graph = tf.get_default_graph()
     model._make_predict_function()
     return model
 
-def test_image_convert():
-    model = load_result_model()
+def im_debug(img):
+    cv2.namedWindow('dst_rt', cv2.WINDOW_NORMAL)
+    cv2.imshow('dst_rt', img)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
 
-    img_path = 'images/red/img_0_0.png'
-    cv_image = cv2.imread(img_path)
+def test_image_convert(model, image_path):
+    cv_image = cv2.imread(image_path)
     # cv_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
-    cv_image = cv2.resize(cv_image, (160, 120)).astype(np.float32)
+    cv_image = cv2.resize(cv_image, (160, 120)) # .astype(np.float32)
     image_data = np.reshape(cv_image, (1,160,120,3))
     x = preprocess_input(image_data)
     features = model.predict(x)
     print(features) # GYR
 
-test_image_convert()
+
+model = load_result_model()
+test_image_convert(model, 'images/red/img_0_0.png')
+test_image_convert(model, 'images/yellow/img_97_4.png')
+test_image_convert(model, 'images/green/img_174_4.png')
